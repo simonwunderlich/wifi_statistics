@@ -1,0 +1,14 @@
+Usage:
+
+1. Create monitor device mon0
+2. insmod wifi-statistics.ko 
+3. cat /sys/kernel/debug/wifi_statistics/stats 
+
+Optional:
+echo "read" > /sys/kernel/debug/wifi_statistics/mode
+or
+echo "reset" > /sys/kernel/debug/wifi_statistics/mode
+
+The reset mode is similar to the read mode, delets all
+stations from the internal database when reading.
+In read mode, the internal database is not modified.
