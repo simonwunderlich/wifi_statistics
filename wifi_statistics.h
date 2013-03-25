@@ -26,30 +26,12 @@
 #include <linux/debugfs.h>
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
-
+#include "compat.h"		/* remove if sending this upstream */
 
 #define WIFI_STATISTICS_DRIVER_AUTHOR	"Simon Wunderlich <siwu@hrz.tu-chemnitz.de>"
 #define WIFI_STATISTICS_DRIVER_DESC	"WiFi statistics"
 #define WIFI_STATISTICS_DRIVER_DEVICE	"wifi_statistics"
 #define WIFI_STATISTICS_SOURCE_VERSION 	"broken"
-
-/* compat code */
-#include <linux/version.h>	/* LINUX_VERSION_CODE */
-#ifndef IEEE80211_NUM_TIDS
-#define IEEE80211_NUM_TIDS	16
-#endif /*IEEE80211_NUM_TIDS */
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
-static inline int debug_open(struct inode *inode, struct file *file)
-{
-       file->private_data = inode->i_private;
-       return 0;
-}
-
-#define simple_open	debug_open
-#endif /* < KERNEL_VERSION(3, 4, 0) */
-
-
 
 #define WS_HASH_SIZE	64
 

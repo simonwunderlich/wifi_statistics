@@ -41,7 +41,6 @@ struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac)
 	struct ws_sta *res = NULL, *tmp_sta;
 	spinlock_t *list_lock; /* spinlock to protect write access */
 	struct hlist_head *head;
-	struct hlist_node *node;
 	u32 index;
 
 	index = ws_hash_choose(mac);
@@ -49,7 +48,7 @@ struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac)
 	list_lock = &hash->list_locks[index];
 
 	rcu_read_lock();
-	hlist_for_each_entry_rcu(tmp_sta, node, head, hash_entry) {
+	hlist_for_each_entry_rcu(tmp_sta, head, hash_entry) {
 		if (memcmp(mac, tmp_sta->mac, ETH_ALEN))
 			continue;
 
@@ -104,7 +103,7 @@ int ws_hash_free(void)
 {
 	struct ws_hash *hash = &ws_hash; /* static for now */
 	struct ws_sta *ws_sta;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node;
 	struct hlist_head *head;
 	spinlock_t *list_lock;	/* protects write access to the hash lists */
 	int i;
@@ -114,7 +113,7 @@ int ws_hash_free(void)
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		hlist_for_each_entry_safe(ws_sta, node, node_tmp, head, hash_entry) {
+		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
 			ws_sta_free_ref(ws_sta);
 			hlist_del_rcu(node);
 		}

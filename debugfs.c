@@ -26,7 +26,6 @@ int ws_sta_seq_read(struct seq_file *seq, void *offset)
 {
 	struct ws_hash *hash = &ws_hash;
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct ws_sta *ws_sta;
 	int i;
 
@@ -34,7 +33,7 @@ int ws_sta_seq_read(struct seq_file *seq, void *offset)
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		hlist_for_each_entry_rcu(ws_sta, node, head, hash_entry)
+		hlist_for_each_entry_rcu(ws_sta, head, hash_entry)
 			ws_sta_seq_print(ws_sta, seq, offset);
 		rcu_read_unlock();
 	}
@@ -45,7 +44,7 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 {
 	struct ws_hash *hash = &ws_hash;
 	struct hlist_head *head;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node;
 	spinlock_t *list_lock;	/* protects write access to the hash lists */
 	struct ws_sta *ws_sta;
 	int i;
@@ -56,7 +55,7 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 
 		/* TODO: can we write while doing spinlocks?! */
 		spin_lock_bh(list_lock);
-		hlist_for_each_entry_safe(ws_sta, node, node_tmp, head, hash_entry) {
+		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
 			ws_sta_seq_print(ws_sta, seq, offset);
 			ws_sta_free_ref(ws_sta);
 			hlist_del_rcu(node);
