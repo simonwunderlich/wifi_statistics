@@ -25,6 +25,13 @@ void ws_sta_free_ref(struct ws_sta *ws_sta)
 		kfree_rcu(ws_sta, rcu);
 }
 
+void ws_sta_init_detail(struct ws_sta_detailed *detail)
+{
+	detail->min = INT_MAX;
+	detail->max = INT_MIN;
+	ewma_init(&detail->ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
+}
+
 void ws_sta_init(struct ws_sta *ws_sta)
 {
 	int i;
@@ -32,14 +39,11 @@ void ws_sta_init(struct ws_sta *ws_sta)
 	for (i = 0; i < NUM_TIDS; i++) {
 		ws_sta->last_seqno[i] = -1;
 		memset(ws_sta->last_dest[i], 0, sizeof(ws_sta->last_dest[i]));
-		ws_sta->seqno_diff[i].min = INT_MAX;
-		ws_sta->seqno_diff[i].max = INT_MIN;
-		ewma_init(&ws_sta->seqno_diff[i].ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
+		ws_sta_init_detail(&ws_sta->seqno_diff[i]);
 	}
 
-	ws_sta->signal.min = INT_MAX;
-	ws_sta->signal.max = INT_MIN;
-	ewma_init(&ws_sta->signal.ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
+	ws_sta_init_detail(&ws_sta->signal);
+	ws_sta_init_detail(&ws_sta->interval);
 }
 
 static void ws_sta_print_detail(struct seq_file *seq,
@@ -83,6 +87,10 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
 	seq_printf(seq, "\ttotal bytes: %llu\n", ws_sta->rx_bytes);
 	seq_printf(seq, "\tlast seen (msec): %d\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
+	if (ws_sta->interval.count > 0) {
+		seq_printf(seq, "\tpacket interval: ");
+	        ws_sta_print_detail(seq, &ws_sta->interval);
+	}
 	seq_printf(seq, "\tBSSID: %pM\n", ws_sta->bssid);
 	seq_printf(seq, "\ttype: %s\n", ws_sta_get_type(ws_sta->type));
 	for (i = 0; i < NUM_TIDS; i++) {
@@ -107,6 +115,20 @@ static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
 	detail->sum += value;
 	detail->sum_square += value * value;
 	ewma_add(&detail->ewma, value + (INT_MAX>>2));
+}
+
+int ws_sta_general(struct ws_sta *ws_sta, struct sk_buff *skb)
+{
+	int interval;
+
+	if (ws_sta->rx_packets > 0) {
+		interval = (int) (jiffies - ws_sta->last_seen);
+		ws_sta_detailed_apply(&ws_sta->interval, interval);
+	}
+	ws_sta->last_seen = jiffies;
+	ws_sta->rx_packets++;
+	ws_sta->rx_bytes += skb->len;
+	return 0;
 }
 
 int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,

@@ -65,6 +65,7 @@ struct ws_sta {
 	u8 bssid[ETH_ALEN];
 	u8 type;
 	struct ws_sta_detailed signal;
+	struct ws_sta_detailed interval;
 	s16 last_seqno[NUM_TIDS];
 	u8 last_dest[NUM_TIDS][ETH_ALEN];
 	struct ws_sta_detailed seqno_diff[NUM_TIDS];
@@ -89,6 +90,7 @@ extern struct ws_hash ws_hash;
 /* station */
 void ws_sta_free_ref(struct ws_sta *ws_sta);
 void ws_sta_init(struct ws_sta *ws_sta);
+int ws_sta_general(struct ws_sta *ws_sta, struct sk_buff *skb);
 int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 			       struct ieee80211_hdr *hdr, int len);
 int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
