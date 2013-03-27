@@ -31,6 +31,9 @@ void ws_sta_init(struct ws_sta *ws_sta)
 	spin_lock_init(&ws_sta->lock);
 	for (i = 0; i < NUM_TIDS; i++)
 		ws_sta->last_seqno[i] = -1;
+
+	ws_sta->signal.min = INT_MAX;
+	ws_sta->signal.max = INT_MIN;
 }
 
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
@@ -38,7 +41,14 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	int i;
 
 	seq_printf(seq, "station %pM {\n", ws_sta->mac);
-	seq_printf(seq, "\tlast signal: %d\n", ws_sta->last_signal);
+	seq_printf(seq, "\tsignal: {\n");
+	seq_printf(seq, "\t\tlast: %d\n", ws_sta->signal.last);
+	seq_printf(seq, "\t\tmin: %d\n", ws_sta->signal.min);
+	seq_printf(seq, "\t\tmax: %d\n", ws_sta->signal.max);
+	seq_printf(seq, "\t\tcount: %d\n", ws_sta->signal.count);
+	seq_printf(seq, "\t\tsum: %d\n", ws_sta->signal.sum);
+	seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->signal.sum_square);
+	seq_printf(seq, "\t}\n");
 	seq_printf(seq, "\tbad fcs packets: %d\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
 	seq_printf(seq, "\tlast seen (msec): %d\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
@@ -92,10 +102,16 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 			continue;
 
 		switch (iterator.this_arg_index) {
-		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-			ws_sta->last_signal = (s8) *iterator.this_arg;
-			/* TODO: averages? */
+		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL: {
+			s8 signal = (s8) *iterator.this_arg;
+			ws_sta->signal.last = signal;
+			ws_sta->signal.min = min((int)signal, ws_sta->signal.min);
+			ws_sta->signal.max = max((int)signal, ws_sta->signal.max);
+			ws_sta->signal.count++;
+			ws_sta->signal.sum += signal;
+			ws_sta->signal.sum_square += signal * signal;
 			break;
+		}
 		case IEEE80211_RADIOTAP_FLAGS:
 			if (*iterator.this_arg & (IEEE80211_RADIOTAP_F_BADFCS))
 				ws_sta->bad_fcs++;

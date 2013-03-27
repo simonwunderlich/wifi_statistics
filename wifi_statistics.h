@@ -39,12 +39,19 @@
 #define BCAST_TID		NUM_UCAST_TID
 #define NUM_TIDS		(NUM_UCAST_TID + 1)
 
+struct ws_sta_detailed {
+	int last, min, max, count, sum;
+	u64 sum_square;
+	/* moving average might be interesting too */
+};
+
 struct ws_sta {
 	u8 mac[ETH_ALEN];
 	long unsigned int last_seen;
 	u32 rx_packets;
+	u64 rx_bytes;
 	u32 bad_fcs;
-	s8 last_signal;
+	struct ws_sta_detailed signal;
 	s16 last_seqno[NUM_TIDS];
 	spinlock_t lock;
 	atomic_t refcount;
