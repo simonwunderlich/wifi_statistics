@@ -24,6 +24,7 @@
 #include <linux/skbuff.h>
 #include <linux/ieee80211.h>
 #include <linux/debugfs.h>
+#include <linux/etherdevice.h>
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
 #include "compat.h"		/* remove if sending this upstream */
@@ -53,6 +54,8 @@ struct ws_sta {
 	u32 bad_fcs;
 	struct ws_sta_detailed signal;
 	s16 last_seqno[NUM_TIDS];
+	u8 last_dest[NUM_TIDS][ETH_ALEN];
+	struct ws_sta_detailed seqno_diff[NUM_TIDS];
 	spinlock_t lock;
 	atomic_t refcount;
 	struct rcu_head rcu;

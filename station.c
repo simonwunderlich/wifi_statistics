@@ -29,8 +29,12 @@ void ws_sta_init(struct ws_sta *ws_sta)
 {
 	int i;
 	spin_lock_init(&ws_sta->lock);
-	for (i = 0; i < NUM_TIDS; i++)
+	for (i = 0; i < NUM_TIDS; i++) {
 		ws_sta->last_seqno[i] = -1;
+		memset(ws_sta->last_dest[i], 0, sizeof(ws_sta->last_dest[i]));
+		ws_sta->seqno_diff[i].min = INT_MAX;
+		ws_sta->seqno_diff[i].max = INT_MIN;
+	}
 
 	ws_sta->signal.min = INT_MAX;
 	ws_sta->signal.max = INT_MIN;
@@ -57,17 +61,36 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
 		seq_printf(seq, "\tlast_seqno[TID %d]: %d,\n", i, ws_sta->last_seqno[i]);
+		if (ws_sta->seqno_diff[i].count > 0) {
+			seq_printf(seq, "\tseqno difference[TID %d]: {\n", i);
+			seq_printf(seq, "\t\tlast: %d\n", ws_sta->seqno_diff[i].last);
+			seq_printf(seq, "\t\tmin: %d\n", ws_sta->seqno_diff[i].min);
+			seq_printf(seq, "\t\tmax: %d\n", ws_sta->seqno_diff[i].max);
+			seq_printf(seq, "\t\tcount: %d\n", ws_sta->seqno_diff[i].count);
+			seq_printf(seq, "\t\tsum: %d\n", ws_sta->seqno_diff[i].sum);
+			seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->seqno_diff[i].sum_square);
+			seq_printf(seq, "\t}\n");
+		}
 	}
 	seq_printf(seq, "}\n");
 	return 0;
 }
 
+static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
+{
+	detail->last = value;
+	detail->min = min((int)value, detail->min);
+	detail->max = max((int)value, detail->max);
+	detail->count++;
+	detail->sum += value;
+	detail->sum_square += value * value;
+}
 
 int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 			       struct ieee80211_hdr *hdr, int len)
 {
 	int tid = 0;
-	static char bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	int seqno;
 	u8 *dest;
 
 	/* only care about data and management frames for now ... */
@@ -75,15 +98,42 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	    !ieee80211_is_mgmt(hdr->frame_control))
 		return 0;
 
-	dest = ieee80211_get_DA(hdr);
-	if (memcmp(dest, bcast, ETH_ALEN) == 0)
+	/* Find out the TID if it's an individually adressed QoS data frame,
+	 * otherwise use the "general" counter for all other frames
+	 * (multicasts, beacons, etc) which is called BCAST_TID here.
+	 *
+	 * see 802.11-2012 9.3.2.10 Duplicate detection and recovery
+	 * for details.
+	 */
+	dest = hdr->addr1;
+	if (is_multicast_ether_addr(dest))
 		tid = BCAST_TID;
 	else if (ieee80211_is_data_qos(hdr->frame_control)) {
 		u8 *qc = ieee80211_get_qos_ctl(hdr);
 		tid = *qc & IEEE80211_QOS_CTL_TID_MASK;
-	} else tid = 0;
+	} else tid = BCAST_TID;
 
-        ws_sta->last_seqno[tid] = le16_to_cpu(hdr->seq_ctrl) >> 4;
+	/* Keeping track of all destinations of any station appears
+	 * to be unreasonable overhead. Therefore, we use a best
+	 * effort approach here and only track seqno differences
+	 * if the destination is the same as last time on this TID.
+	 */
+	seqno = le16_to_cpu(hdr->seq_ctrl) >> 4;
+	if (memcmp(ws_sta->last_dest[tid], dest, ETH_ALEN) == 0) {
+		int diff;
+
+		diff = (seqno - ws_sta->last_seqno[tid] + (1 << 12)) % (1 << 12);
+
+		/* jumped backwards? */
+		if (diff > (1 << 11))
+			diff -= 1 << 12;
+
+		ws_sta_detailed_apply(&ws_sta->seqno_diff[tid], diff);
+
+	}
+
+	memcpy(ws_sta->last_dest[tid], dest, ETH_ALEN);
+        ws_sta->last_seqno[tid] = seqno;
 
 	return 0;
 }
@@ -104,13 +154,7 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 
 		switch (iterator.this_arg_index) {
 		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL: {
-			s8 signal = (s8) *iterator.this_arg;
-			ws_sta->signal.last = signal;
-			ws_sta->signal.min = min((int)signal, ws_sta->signal.min);
-			ws_sta->signal.max = max((int)signal, ws_sta->signal.max);
-			ws_sta->signal.count++;
-			ws_sta->signal.sum += signal;
-			ws_sta->signal.sum_square += signal * signal;
+			ws_sta_detailed_apply(&ws_sta->signal, (s8) *iterator.this_arg);
 			break;
 		}
 		case IEEE80211_RADIOTAP_FLAGS:
