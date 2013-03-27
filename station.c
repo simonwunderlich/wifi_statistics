@@ -42,20 +42,28 @@ void ws_sta_init(struct ws_sta *ws_sta)
 	ewma_init(&ws_sta->signal.ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
 }
 
+static void ws_sta_print_detail(struct seq_file *seq,
+				struct ws_sta_detailed *detail)
+{
+	seq_printf(seq, "{\n");
+	seq_printf(seq, "\t\tlast: %d\n", detail->last);
+	seq_printf(seq, "\t\tmin: %d\n", detail->min);
+	seq_printf(seq, "\t\tmax: %d\n", detail->max);
+	seq_printf(seq, "\t\tcount: %d\n", detail->count);
+	seq_printf(seq, "\t\tsum: %d\n", detail->sum);
+	seq_printf(seq, "\t\tsum_square: %llu\n", detail->sum_square);
+	seq_printf(seq, "\t\tewma: %d\n",
+		  (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
+	seq_printf(seq, "\t}\n");
+}
+
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 {
 	int i;
 
 	seq_printf(seq, "station %pM {\n", ws_sta->mac);
-	seq_printf(seq, "\tsignal: {\n");
-	seq_printf(seq, "\t\tlast: %d\n", ws_sta->signal.last);
-	seq_printf(seq, "\t\tmin: %d\n", ws_sta->signal.min);
-	seq_printf(seq, "\t\tmax: %d\n", ws_sta->signal.max);
-	seq_printf(seq, "\t\tcount: %d\n", ws_sta->signal.count);
-	seq_printf(seq, "\t\tsum: %d\n", ws_sta->signal.sum);
-	seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->signal.sum_square);
-	seq_printf(seq, "\t\tewma: %d\n", (s8) (ewma_read(&ws_sta->signal.ewma) - (INT_MAX>>2)));
-	seq_printf(seq, "\t}\n");
+	seq_printf(seq, "\tsignal: ");
+	ws_sta_print_detail(seq, &ws_sta->signal);
 	seq_printf(seq, "\tbad fcs packets: %d\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
 	seq_printf(seq, "\ttotal bytes: %llu\n", ws_sta->rx_bytes);
@@ -64,16 +72,9 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
 		seq_printf(seq, "\tlast_seqno[TID %d]: %d,\n", i, ws_sta->last_seqno[i]);
-		if (ws_sta->seqno_diff[i].count > 0) {
-			seq_printf(seq, "\tseqno difference[TID %d]: {\n", i);
-			seq_printf(seq, "\t\tlast: %d\n", ws_sta->seqno_diff[i].last);
-			seq_printf(seq, "\t\tmin: %d\n", ws_sta->seqno_diff[i].min);
-			seq_printf(seq, "\t\tmax: %d\n", ws_sta->seqno_diff[i].max);
-			seq_printf(seq, "\t\tcount: %d\n", ws_sta->seqno_diff[i].count);
-			seq_printf(seq, "\t\tsum: %d\n", ws_sta->seqno_diff[i].sum);
-			seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->seqno_diff[i].sum_square);
-			seq_printf(seq, "\t\tewma: %d\n", (int)(ewma_read(&ws_sta->seqno_diff[i].ewma) - (INT_MAX>>2)));
-			seq_printf(seq, "\t}\n");
+		if (ws_sta->seqno_diff[i].count > 0)  {
+			seq_printf(seq, "\tseqno difference[TID %d]: ", i);
+			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i]);
 		}
 	}
 	seq_printf(seq, "}\n");
