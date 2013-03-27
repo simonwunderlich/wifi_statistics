@@ -54,7 +54,12 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 	if (ieee80211_is_cts(fc) || ieee80211_is_ack(fc))
 		mac = nullmac;
 	else
-		mac = ieee80211_get_SA(hdr);
+		/* transmitter address is always addr2:
+		 *  * SA in an IBSS frame or To-AP frame
+		 *  * BSSID in an in a From-AP frame
+		 *  * TA in a 4 address frame
+		 */
+		mac = hdr->addr2;
 
 	ws_sta = ws_hash_get(mac);
 
