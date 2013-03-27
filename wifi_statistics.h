@@ -49,12 +49,21 @@ struct ws_sta_detailed {
 	struct ewma ewma;
 };
 
+enum ws_sta_type {
+	WS_TYPE_UNKNOWN,
+	WS_TYPE_AP,
+	WS_TYPE_CLIENT,
+	WS_TYPE_IBSS,
+};
+
 struct ws_sta {
 	u8 mac[ETH_ALEN];
 	long unsigned int last_seen;
 	u32 rx_packets;
 	u64 rx_bytes;
 	u32 bad_fcs;
+	u8 bssid[ETH_ALEN];
+	u8 type;
 	struct ws_sta_detailed signal;
 	s16 last_seqno[NUM_TIDS];
 	u8 last_dest[NUM_TIDS][ETH_ALEN];

@@ -57,6 +57,21 @@ static void ws_sta_print_detail(struct seq_file *seq,
 	seq_printf(seq, "\t}\n");
 }
 
+char *ws_sta_get_type(enum ws_sta_type type)
+{
+	switch (type) {
+	case WS_TYPE_AP:
+		return "Access Point";
+	case WS_TYPE_CLIENT:
+		return "Client";
+	case WS_TYPE_IBSS:
+		return "Ad-Hoc";
+	default:
+	case WS_TYPE_UNKNOWN:
+		return "unknown";
+	}
+}
+
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 {
 	int i;
@@ -68,6 +83,8 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
 	seq_printf(seq, "\ttotal bytes: %llu\n", ws_sta->rx_bytes);
 	seq_printf(seq, "\tlast seen (msec): %d\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
+	seq_printf(seq, "\tBSSID: %pM\n", ws_sta->bssid);
+	seq_printf(seq, "\ttype: %s\n", ws_sta_get_type(ws_sta->type));
 	for (i = 0; i < NUM_TIDS; i++) {
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
@@ -103,6 +120,28 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	if (!ieee80211_is_data(hdr->frame_control) &&
 	    !ieee80211_is_mgmt(hdr->frame_control))
 		return 0;
+
+	switch (hdr->frame_control & (IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS)) {
+		case 0:
+			/* APs also emit these type of frames */
+			if (ws_sta->type != WS_TYPE_AP)
+				ws_sta->type = WS_TYPE_IBSS;
+			memcpy(ws_sta->bssid, hdr->addr3, ETH_ALEN);
+			break;
+		case IEEE80211_FCTL_FROMDS:
+			ws_sta->type = WS_TYPE_AP;
+			memcpy(ws_sta->bssid, hdr->addr2, ETH_ALEN);
+			break;
+		case IEEE80211_FCTL_TODS:
+			ws_sta->type = WS_TYPE_CLIENT;
+			memcpy(ws_sta->bssid, hdr->addr1, ETH_ALEN);
+			break;
+		default:
+		case (IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS):
+			/* no IBSS known, and device might act as an AP or
+			 * station at the same time. just leave it. */
+			break;
+	}
 
 	/* Find out the TID if it's an individually adressed QoS data frame,
 	 * otherwise use the "general" counter for all other frames
