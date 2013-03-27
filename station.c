@@ -34,10 +34,12 @@ void ws_sta_init(struct ws_sta *ws_sta)
 		memset(ws_sta->last_dest[i], 0, sizeof(ws_sta->last_dest[i]));
 		ws_sta->seqno_diff[i].min = INT_MAX;
 		ws_sta->seqno_diff[i].max = INT_MIN;
+		ewma_init(&ws_sta->seqno_diff[i].ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
 	}
 
 	ws_sta->signal.min = INT_MAX;
 	ws_sta->signal.max = INT_MIN;
+	ewma_init(&ws_sta->signal.ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
 }
 
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
@@ -52,6 +54,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\t\tcount: %d\n", ws_sta->signal.count);
 	seq_printf(seq, "\t\tsum: %d\n", ws_sta->signal.sum);
 	seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->signal.sum_square);
+	seq_printf(seq, "\t\tewma: %d\n", (s8) (ewma_read(&ws_sta->signal.ewma) - (INT_MAX>>2)));
 	seq_printf(seq, "\t}\n");
 	seq_printf(seq, "\tbad fcs packets: %d\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
@@ -69,6 +72,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 			seq_printf(seq, "\t\tcount: %d\n", ws_sta->seqno_diff[i].count);
 			seq_printf(seq, "\t\tsum: %d\n", ws_sta->seqno_diff[i].sum);
 			seq_printf(seq, "\t\tsum_square: %llu\n", ws_sta->seqno_diff[i].sum_square);
+			seq_printf(seq, "\t\tewma: %d\n", (int)(ewma_read(&ws_sta->seqno_diff[i].ewma) - (INT_MAX>>2)));
 			seq_printf(seq, "\t}\n");
 		}
 	}
@@ -84,6 +88,7 @@ static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
 	detail->count++;
 	detail->sum += value;
 	detail->sum_square += value * value;
+	ewma_add(&detail->ewma, value + (INT_MAX>>2));
 }
 
 int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,

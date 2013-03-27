@@ -25,6 +25,7 @@
 #include <linux/ieee80211.h>
 #include <linux/debugfs.h>
 #include <linux/etherdevice.h>
+#include <linux/average.h>
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
 #include "compat.h"		/* remove if sending this upstream */
@@ -34,7 +35,9 @@
 #define WIFI_STATISTICS_DRIVER_DEVICE	"wifi_statistics"
 #define WIFI_STATISTICS_SOURCE_VERSION 	"broken"
 
-#define WS_HASH_SIZE	64
+#define WS_HASH_SIZE		64
+#define WS_EWMA_FACTOR		2
+#define WS_EWMA_WEIGHT		2
 
 #define NUM_UCAST_TID		IEEE80211_NUM_TIDS
 #define BCAST_TID		NUM_UCAST_TID
@@ -43,7 +46,7 @@
 struct ws_sta_detailed {
 	int last, min, max, count, sum;
 	u64 sum_square;
-	/* moving average might be interesting too */
+	struct ewma ewma;
 };
 
 struct ws_sta {
