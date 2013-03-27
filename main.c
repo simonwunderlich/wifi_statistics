@@ -19,6 +19,7 @@
 
 #include "wifi_statistics.h"
 
+static char *iface = "mon0";
 struct net_device *dev = NULL;
 static u8 nullmac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0};
 
@@ -79,12 +80,11 @@ end:
 
 static int __init ws_init(void)
 {
-	char *devname = "mon0";
 	void *p = NULL; /* own struct? */
 	int err = 0;
 
 	rtnl_lock();
-	dev = dev_get_by_name(&init_net, devname);
+	dev = dev_get_by_name(&init_net, iface);
 	if (!dev) {
 		err = -EINVAL;
 		goto unlock;
@@ -132,6 +132,7 @@ static void __exit ws_exit(void)
 module_init(ws_init);
 module_exit(ws_exit);
 
+module_param(iface, charp, 0644);
 
 MODULE_LICENSE("GPL");      
 
