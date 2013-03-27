@@ -57,8 +57,8 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 		spin_lock_bh(list_lock);
 		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
 			ws_sta_seq_print(ws_sta, seq, offset);
+			hlist_del_rcu(&ws_sta->hash_entry);
 			ws_sta_free_ref(ws_sta);
-			hlist_del_rcu(node);
 		}
 		spin_unlock_bh(list_lock);
 	}

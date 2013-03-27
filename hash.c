@@ -114,8 +114,8 @@ int ws_hash_free(void)
 
 		spin_lock_bh(list_lock);
 		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
+			hlist_del_rcu(&ws_sta->hash_entry);
 			ws_sta_free_ref(ws_sta);
-			hlist_del_rcu(node);
 		}
 		spin_unlock_bh(list_lock);
 	}
