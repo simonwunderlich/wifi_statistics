@@ -51,6 +51,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\t}\n");
 	seq_printf(seq, "\tbad fcs packets: %d\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
+	seq_printf(seq, "\ttotal bytes: %llu\n", ws_sta->rx_bytes);
 	seq_printf(seq, "\tlast seen (msec): %d\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
 	for (i = 0; i < NUM_TIDS; i++) {
 		if (ws_sta->last_seqno[i] < 0)

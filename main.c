@@ -63,6 +63,7 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 
 	ws_sta->last_seen = jiffies;
 	ws_sta->rx_packets++;
+	ws_sta->rx_bytes += skb->len;
 	ws_sta_parse_radiotap(ws_sta, rthdr, len);
 	ws_sta_parse_ieee80211_hdr(ws_sta, hdr, hdrlen);
 
