@@ -1,0 +1,5 @@
+obj-$(CONFIG_WIFI_STATISTICS) += wifi-statistics.o
+wifi-statistics-y += main.o
+wifi-statistics-y += hash.o
+wifi-statistics-y += station.o
+wifi-statistics-y += debugfs.o
