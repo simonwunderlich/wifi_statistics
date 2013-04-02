@@ -19,8 +19,6 @@
 
 #include "wifi_statistics.h"
 
-struct ws_hash ws_hash;
-
 static inline u32 ws_hash_choose(void *mac)
 {
 	u32 hash = 0;
@@ -65,9 +63,8 @@ struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac)
 
 
 /* like hash_find, but assigns a new element if not present yet */
-struct ws_sta *ws_hash_get(u8 *mac)
+struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
 {
-	struct ws_hash *hash = &ws_hash; /* static for now */
 	struct ws_sta *ws_sta;
 	spinlock_t *list_lock; /* spinlock to protect write access */
 	struct hlist_head *head;
@@ -99,9 +96,8 @@ struct ws_sta *ws_hash_get(u8 *mac)
 	return ws_sta;
 }
 
-int ws_hash_free(void)
+int ws_hash_free(struct ws_hash *hash)
 {
-	struct ws_hash *hash = &ws_hash; /* static for now */
 	struct ws_sta *ws_sta;
 	struct hlist_node *node;
 	struct hlist_head *head;
@@ -123,13 +119,13 @@ int ws_hash_free(void)
 	return 0;
 }
 
-int ws_hash_init(void)
+int ws_hash_init(struct ws_hash *hash)
 {
 	int i;
 
 	for (i = 0; i < WS_HASH_SIZE; i++) {
-		INIT_HLIST_HEAD(&ws_hash.table[i]);
-		spin_lock_init(&ws_hash.list_locks[i]);
+		INIT_HLIST_HEAD(&hash->table[i]);
+		spin_lock_init(&hash->list_locks[i]);
 	}
 	return 0;
 }

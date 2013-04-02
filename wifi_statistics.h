@@ -56,6 +56,28 @@ enum ws_sta_type {
 	WS_TYPE_IBSS,
 };
 
+enum ws_mode {
+	MODE_READ,
+	MODE_RESET,
+};
+
+struct ws_hash {
+	struct hlist_head table[WS_HASH_SIZE];
+	spinlock_t list_locks[WS_HASH_SIZE];
+};
+
+struct ws_monif {
+	struct net_device *net_dev;
+	atomic_t active;
+	enum ws_mode ws_mode;
+	struct ws_hash hash;
+	struct dentry *dir;
+
+	atomic_t refcount;
+	struct rcu_head rcu;
+	struct list_head list;
+};
+
 struct ws_sta {
 	u8 mac[ETH_ALEN];
 	long unsigned int last_seen;
@@ -76,16 +98,14 @@ struct ws_sta {
 	struct hlist_node hash_entry;
 };
 
-struct ws_hash {
-	struct hlist_head table[WS_HASH_SIZE];
-	spinlock_t list_locks[WS_HASH_SIZE];
-};
+extern struct list_head monif_list;
+int ws_monif_activate(struct ws_monif *monif);
+int ws_monif_deactivate(struct ws_monif *monif);
 
 /* hash */
-int ws_hash_init(void);
-int ws_hash_free(void);
-struct ws_sta *ws_hash_get(u8 *mac);
-extern struct ws_hash ws_hash;
+int ws_hash_init(struct ws_hash *hash);
+int ws_hash_free(struct ws_hash *hash);
+struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac);
 
 /* station */
 void ws_sta_free_ref(struct ws_sta *ws_sta);
@@ -98,12 +118,7 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset);
 
 /* debugfs */
-enum ws_mode {
-	MODE_READ,
-	MODE_RESET,
-};
-
-extern enum ws_mode ws_mode;
-
 void ws_debugfs_init(void);
 void ws_debugfs_destroy(void);
+void ws_debugfs_monif_init(struct ws_monif *monif);
+void ws_debugfs_monif_clean(struct ws_monif *monif);
