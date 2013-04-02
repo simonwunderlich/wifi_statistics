@@ -23,7 +23,13 @@ Usage:
 1. Create monitor device mon0, for example by doing:
 	iw phy phy0 interface add mon0 type monitor flags control fcsfail
 	ifconfig mon0 up
+
 2. insmod wifi-statistics.ko 
+   (Note: if you use a monitor interface different from mon0,
+    use the iface parameter to specify the monitor interface, as in:
+    insmod wifi-statistics.ko iface=mon1
+   )
+
 3. cat /sys/kernel/debug/wifi_statistics/stats 
 
 Optional:
