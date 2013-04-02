@@ -37,7 +37,9 @@ static inline int debug_open(struct inode *inode, struct file *file)
 
 #ifndef hlist_entry_safe
 #define hlist_entry_safe(ptr, type, member) \
-	(ptr) ? hlist_entry(ptr, type, member) : NULL
+	({ typeof(ptr) ____ptr = (ptr); \
+		____ptr ? hlist_entry(____ptr, type, member) : NULL; \
+	})
 #endif
 
 #undef hlist_for_each_entry
