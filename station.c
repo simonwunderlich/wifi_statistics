@@ -47,18 +47,19 @@ void ws_sta_init(struct ws_sta *ws_sta)
 }
 
 static void ws_sta_print_detail(struct seq_file *seq,
-				struct ws_sta_detailed *detail)
+				struct ws_sta_detailed *detail,
+				char *tabs)
 {
-	seq_printf(seq, "{\n");
-	seq_printf(seq, "\t\tlast: %d\n", detail->last);
-	seq_printf(seq, "\t\tmin: %d\n", detail->min);
-	seq_printf(seq, "\t\tmax: %d\n", detail->max);
-	seq_printf(seq, "\t\tcount: %d\n", detail->count);
-	seq_printf(seq, "\t\tsum: %d\n", detail->sum);
-	seq_printf(seq, "\t\tsum_square: %llu\n", detail->sum_square);
-	seq_printf(seq, "\t\tewma: %d\n",
+	seq_printf(seq, "\n%s{\n", tabs);
+	seq_printf(seq, "%s\t\"last\": %d,\n", tabs, detail->last);
+	seq_printf(seq, "%s\t\"min\": %d,\n", tabs, detail->min);
+	seq_printf(seq, "%s\t\"max\": %d,\n", tabs, detail->max);
+	seq_printf(seq, "%s\t\"count\": %d,\n", tabs, detail->count);
+	seq_printf(seq, "%s\t\"sum\": %d,\n", tabs, detail->sum);
+	seq_printf(seq, "%s\t\"sum_square\": %llu,\n", tabs, detail->sum_square);
+	seq_printf(seq, "%s\t\"ewma\": %d\n", tabs,
 		  (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
-	seq_printf(seq, "\t}\n");
+	seq_printf(seq, "%s}", tabs);
 }
 
 char *ws_sta_get_type(enum ws_sta_type type)
@@ -76,33 +77,58 @@ char *ws_sta_get_type(enum ws_sta_type type)
 	}
 }
 
+int ws_sta_seq_print_head(struct seq_file *seq)
+{
+	seq_printf(seq, "{\n\"stations\": [");
+	return 0;
+}
+
+int ws_sta_seq_print_tail(struct seq_file *seq)
+{
+	seq_printf(seq, "\n\t]\n}\n");
+	return 0;
+}
+
 int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 {
+	bool first = true;
 	int i;
 
-	seq_printf(seq, "station %pM {\n", ws_sta->mac);
-	seq_printf(seq, "\tsignal: ");
-	ws_sta_print_detail(seq, &ws_sta->signal);
-	seq_printf(seq, "\tbad fcs packets: %d\n", ws_sta->bad_fcs);
-	seq_printf(seq, "\ttotal packets: %d\n", ws_sta->rx_packets);
-	seq_printf(seq, "\ttotal bytes: %llu\n", ws_sta->rx_bytes);
-	seq_printf(seq, "\tlast seen (msec): %d\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
+	seq_printf(seq, "\n\t{\n");
+	seq_printf(seq, "\t\"mac\":\"%pM\",\n", ws_sta->mac);
+	seq_printf(seq, "\t\"signal\": ");
+	ws_sta_print_detail(seq, &ws_sta->signal, "\t");
+	seq_printf(seq, ",\n");
+	seq_printf(seq, "\t\"bad fcs packets\": %d,\n", ws_sta->bad_fcs);
+	seq_printf(seq, "\t\"total packets\": %d,\n", ws_sta->rx_packets);
+	seq_printf(seq, "\t\"total bytes\": %llu,\n", ws_sta->rx_bytes);
+	seq_printf(seq, "\t\"last seen (msec)\": %d,\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
+	seq_printf(seq, "\t\"last seen (msec)\": %d,\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
 	if (ws_sta->interval.count > 0) {
-		seq_printf(seq, "\tpacket interval: ");
-	        ws_sta_print_detail(seq, &ws_sta->interval);
+		seq_printf(seq, "\t\"packet interval\": ");
+	        ws_sta_print_detail(seq, &ws_sta->interval, "\t");
+		seq_printf(seq, ",\n");
 	}
-	seq_printf(seq, "\tBSSID: %pM\n", ws_sta->bssid);
-	seq_printf(seq, "\ttype: %s\n", ws_sta_get_type(ws_sta->type));
+	seq_printf(seq, "\t\"BSSID\": \"%pM\",\n", ws_sta->bssid);
+	seq_printf(seq, "\t\"type\": \"%s\",\n", ws_sta_get_type(ws_sta->type));
+	seq_printf(seq, "\t\"seqno\": [\n");
 	for (i = 0; i < NUM_TIDS; i++) {
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
-		seq_printf(seq, "\tlast_seqno[TID %d]: %d,\n", i, ws_sta->last_seqno[i]);
+		if (!first)
+			seq_printf(seq, ",");
+		seq_printf(seq, "\t\t{\n");
+		seq_printf(seq, "\t\t\t\"tid\": %d, \n", i);
+		seq_printf(seq, "\t\t\t\"last seqno\": %d", ws_sta->last_seqno[i]);
 		if (ws_sta->seqno_diff[i].count > 0)  {
-			seq_printf(seq, "\tseqno difference[TID %d]: ", i);
-			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i]);
+			seq_printf(seq, ",\n\t\t\t\"difference\": ", i);
+			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i], "\t\t\t");
 		}
+		first = false;
+		seq_printf(seq, "\n\t\t}");
 	}
-	seq_printf(seq, "}\n");
+	seq_printf(seq, "\n\t\t]\n");
+	seq_printf(seq, "\n\t}");
 	return 0;
 }
 

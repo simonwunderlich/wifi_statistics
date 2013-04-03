@@ -122,3 +122,6 @@ void ws_debugfs_init(void);
 void ws_debugfs_destroy(void);
 void ws_debugfs_monif_init(struct ws_monif *monif);
 void ws_debugfs_monif_clean(struct ws_monif *monif);
+int ws_sta_seq_print_head(struct seq_file *seq);
+int ws_sta_seq_print_tail(struct seq_file *seq);
+int ws_sta_seq_print_sep(struct seq_file *seq);

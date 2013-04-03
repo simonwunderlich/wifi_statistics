@@ -79,19 +79,26 @@ int ws_sta_seq_read(struct seq_file *seq, void *offset)
 	struct ws_hash *hash = &monif->hash;
 	struct hlist_head *head;
 	struct ws_sta *ws_sta;
+	bool first = true;
 	int i;
 
 	if (!atomic_read(&monif->active))
 		return -1;
 
+	ws_sta_seq_print_head(seq);
 	for (i = 0; i < WS_HASH_SIZE; i++) {
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		hlist_for_each_entry_rcu(ws_sta, head, hash_entry)
+		hlist_for_each_entry_rcu(ws_sta, head, hash_entry) {
+			if (!first)
+				seq_printf(seq, ",");
 			ws_sta_seq_print(ws_sta, seq, offset);
+			first = false;
+		}
 		rcu_read_unlock();
 	}
+	ws_sta_seq_print_tail(seq);
 	return 0;
 }
 
@@ -104,10 +111,12 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 	spinlock_t *list_lock;	/* protects write access to the hash lists */
 	struct ws_sta *ws_sta;
 	int i;
+	bool first = true;
 
 	if (!atomic_read(&monif->active))
 		return -1;
 
+	ws_sta_seq_print_head(seq);
 	for (i = 0; i < WS_HASH_SIZE; i++) {
 		head = &hash->table[i];
 		list_lock = &hash->list_locks[i];
@@ -115,12 +124,16 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 		/* TODO: can we write while doing spinlocks?! */
 		spin_lock_bh(list_lock);
 		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
+			if (!first)
+				seq_printf(seq, ",");
 			ws_sta_seq_print(ws_sta, seq, offset);
 			hlist_del_rcu(&ws_sta->hash_entry);
 			ws_sta_free_ref(ws_sta);
+			first = false;
 		}
 		spin_unlock_bh(list_lock);
 	}
+	ws_sta_seq_print_tail(seq);
 	return 0;
 }
 
