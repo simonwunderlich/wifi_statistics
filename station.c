@@ -103,7 +103,6 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\t\"total packets\": %d,\n", ws_sta->rx_packets);
 	seq_printf(seq, "\t\"total bytes\": %llu,\n", ws_sta->rx_bytes);
 	seq_printf(seq, "\t\"last seen (msec)\": %d,\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
-	seq_printf(seq, "\t\"last seen (msec)\": %d,\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
 	if (ws_sta->interval.count > 0) {
 		seq_printf(seq, "\t\"packet interval\": ");
 	        ws_sta_print_detail(seq, &ws_sta->interval, "\t");
