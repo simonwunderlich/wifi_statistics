@@ -100,7 +100,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\t\"signal\": ");
 	ws_sta_print_detail(seq, &ws_sta->signal, "\t");
 	seq_printf(seq, ",\n");
-	seq_printf(seq, "\t\"rate\": ");
+	seq_printf(seq, "\t\"rate (100 kbps)\": ");
 	ws_sta_print_detail(seq, &ws_sta->rate, "\t");
 	seq_printf(seq, ",\n");
 	seq_printf(seq, "\t\"bad fcs packets\": %d,\n", ws_sta->bad_fcs);
@@ -272,7 +272,7 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 				ws_sta->bad_fcs++;
 			break;
 		case IEEE80211_RADIOTAP_RATE:
-			ws_sta_detailed_apply(&ws_sta->rate, ((u8) *iterator.this_arg) * 500);
+			ws_sta_detailed_apply(&ws_sta->rate, ((u8) *iterator.this_arg) * 5);
 			break;
 		case IEEE80211_RADIOTAP_MCS: {
 			/* 0 = mcs_details
@@ -291,7 +291,7 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 			if (flags & IEEE80211_RADIOTAP_MCS_SGI)
 				rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
 
-			bitrate = cfg80211_calculate_bitrate(&rate) * 100;
+			bitrate = cfg80211_calculate_bitrate(&rate);
 			/* might return 0 for MCS >= 32 */
 			if (bitrate)
 				ws_sta_detailed_apply(&ws_sta->rate, bitrate);
