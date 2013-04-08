@@ -142,7 +142,7 @@ static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
 	detail->max = max((int)value, detail->max);
 	detail->count++;
 	detail->sum += value;
-	detail->sum_square += value * value;
+	detail->sum_square += ((u64) value) * ((u64) value);
 	ewma_add(&detail->ewma, value + (INT_MAX>>2));
 }
 
