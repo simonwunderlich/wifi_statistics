@@ -120,7 +120,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 		seq_printf(seq, "\t\t\t\"tid\": %d, \n", i);
 		seq_printf(seq, "\t\t\t\"last seqno\": %d", ws_sta->last_seqno[i]);
 		if (ws_sta->seqno_diff[i].count > 0)  {
-			seq_printf(seq, ",\n\t\t\t\"difference\": ", i);
+			seq_printf(seq, ",\n\t\t\t\"difference\": ");
 			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i], "\t\t\t");
 		}
 		first = false;
