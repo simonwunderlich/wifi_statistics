@@ -165,33 +165,47 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 {
 	int tid = 0;
 	int seqno;
+	bool is_data, is_mgmt;
 	u8 *dest;
 
+
+	is_data = ieee80211_is_data(hdr->frame_control);
+	is_mgmt = ieee80211_is_mgmt(hdr->frame_control);
+
 	/* only care about data and management frames for now ... */
-	if (!ieee80211_is_data(hdr->frame_control) &&
-	    !ieee80211_is_mgmt(hdr->frame_control))
+	if (!is_data && !is_mgmt)
 		return 0;
 
-	switch (hdr->frame_control & (IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS)) {
-		case 0:
-			/* APs also emit these type of frames */
-			if (ws_sta->type != WS_TYPE_AP)
-				ws_sta->type = WS_TYPE_IBSS;
-			memcpy(ws_sta->bssid, hdr->addr3, ETH_ALEN);
-			break;
-		case IEEE80211_FCTL_FROMDS:
-			ws_sta->type = WS_TYPE_AP;
-			memcpy(ws_sta->bssid, hdr->addr2, ETH_ALEN);
-			break;
-		case IEEE80211_FCTL_TODS:
-			ws_sta->type = WS_TYPE_CLIENT;
-			memcpy(ws_sta->bssid, hdr->addr1, ETH_ALEN);
-			break;
-		default:
-		case (IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS):
-			/* no IBSS known, and device might act as an AP or
-			 * station at the same time. just leave it. */
-			break;
+
+	if (is_mgmt) {
+		/* bssid is always at addr3 for management frames. */
+		memcpy(ws_sta->bssid, hdr->addr3, ETH_ALEN);
+		/* TODO we could derive the type here too, for example
+		 * by looking into beacon frames. */
+	} else if (is_data) {
+		switch (hdr->frame_control &
+			(IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS)) {
+			case 0:
+				/* APs also emit these type of frames */
+				if (ws_sta->type != WS_TYPE_AP)
+					ws_sta->type = WS_TYPE_IBSS;
+				memcpy(ws_sta->bssid, hdr->addr3, ETH_ALEN);
+				break;
+			case IEEE80211_FCTL_FROMDS:
+				ws_sta->type = WS_TYPE_AP;
+				memcpy(ws_sta->bssid, hdr->addr2, ETH_ALEN);
+				break;
+			case IEEE80211_FCTL_TODS:
+				ws_sta->type = WS_TYPE_CLIENT;
+				memcpy(ws_sta->bssid, hdr->addr1, ETH_ALEN);
+				break;
+			default:
+			case (IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS):
+				/* no IBSS known, and device might act as an AP
+				 * or station at the same time. just leave it.
+				 */
+				break;
+		}
 	}
 
 	/* Find out the TID if it's an individually adressed QoS data frame,
