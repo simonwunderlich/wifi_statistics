@@ -87,6 +87,7 @@ struct ws_sta {
 	u8 bssid[ETH_ALEN];
 	u8 type;
 	struct ws_sta_detailed signal;
+	struct ws_sta_detailed rate;
 	struct ws_sta_detailed interval;
 	s16 last_seqno[NUM_TIDS];
 	u8 last_dest[NUM_TIDS][ETH_ALEN];

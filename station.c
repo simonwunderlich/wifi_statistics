@@ -44,6 +44,7 @@ void ws_sta_init(struct ws_sta *ws_sta)
 
 	ws_sta_init_detail(&ws_sta->signal);
 	ws_sta_init_detail(&ws_sta->interval);
+	ws_sta_init_detail(&ws_sta->rate);
 }
 
 static void ws_sta_print_detail(struct seq_file *seq,
@@ -98,6 +99,9 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	seq_printf(seq, "\t\"mac\":\"%pM\",\n", ws_sta->mac);
 	seq_printf(seq, "\t\"signal\": ");
 	ws_sta_print_detail(seq, &ws_sta->signal, "\t");
+	seq_printf(seq, ",\n");
+	seq_printf(seq, "\t\"rate\": ");
+	ws_sta_print_detail(seq, &ws_sta->rate, "\t");
 	seq_printf(seq, ",\n");
 	seq_printf(seq, "\t\"bad fcs packets\": %d,\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\t\"total packets\": %d,\n", ws_sta->rx_packets);
@@ -252,6 +256,33 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 		case IEEE80211_RADIOTAP_FLAGS:
 			if (*iterator.this_arg & (IEEE80211_RADIOTAP_F_BADFCS))
 				ws_sta->bad_fcs++;
+			break;
+		case IEEE80211_RADIOTAP_RATE:
+			ws_sta_detailed_apply(&ws_sta->rate, ((u8) *iterator.this_arg) * 500);
+			break;
+		case IEEE80211_RADIOTAP_MCS: {
+			/* 0 = mcs_details
+			 * 1 = flags
+			 * 2 = rate-index;
+			 */
+			u8 flags = *(iterator.this_arg + 1);
+			u8 mcs_index = *(iterator.this_arg + 2);
+			struct rate_info rate;
+			int bitrate;
+
+			rate.mcs = mcs_index;
+			rate.flags = RATE_INFO_FLAGS_MCS;
+			if (flags & IEEE80211_RADIOTAP_MCS_BW_40)
+				rate.flags |= RATE_INFO_FLAGS_40_MHZ_WIDTH;
+			if (flags & IEEE80211_RADIOTAP_MCS_SGI)
+				rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+			bitrate = cfg80211_calculate_bitrate(&rate) * 100;
+			/* might return 0 for MCS >= 32 */
+			if (bitrate)
+				ws_sta_detailed_apply(&ws_sta->rate, bitrate);
+			break;
+		}
 		default:
 			break;
 		}
