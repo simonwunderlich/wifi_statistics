@@ -28,7 +28,7 @@ Usage:
 	insmod wifi-statistics.ko
 
 3. activate the monitor device:
-	echo 1 > /sys/kernel/debug/wifi_statistics/mon0/activate
+	echo 1 > /sys/kernel/debug/wifi_statistics/mon0/active
 
 4. read the statistics:
 	 cat /sys/kernel/debug/wifi_statistics/mon0/stats
