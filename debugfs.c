@@ -137,7 +137,6 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 	return 0;
 }
 
-
 static int ws_sta_debug_open(struct inode *inode, struct file *file)
 {
 	struct ws_monif *monif = (struct ws_monif *) inode->i_private;
@@ -185,7 +184,6 @@ static ssize_t read_file_mode(struct file *file, char __user *user_buf,
 	return simple_read_from_buffer(user_buf, count, ppos, mode, len);
 }
 
-
 static ssize_t write_file_mode(struct file *file, const char __user *user_buf,
 			       size_t count, loff_t *ppos)
 {
@@ -209,7 +207,6 @@ static ssize_t write_file_mode(struct file *file, const char __user *user_buf,
 
 	return count;
 }
-
 
 struct file_operations mode_fops = {
 	.owner = THIS_MODULE,
