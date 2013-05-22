@@ -92,6 +92,9 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 	if (unlikely(!hdrlen))
 		goto end;
 
+	if (unlikely(!pskb_may_pull(skb, hdrlen)))
+		goto end;
+
 	if (ieee80211_is_cts(fc) || ieee80211_is_ack(fc))
 		mac = nullmac;
 	else
