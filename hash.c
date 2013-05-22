@@ -79,7 +79,7 @@ struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
 		return NULL;
 
 	ws_sta_init(ws_sta);
-	memcpy(ws_sta->mac, mac, sizeof(ws_sta->mac));
+	memcpy(ws_sta->mac, mac, ETH_ALEN);
 
 	/* add new element */
 	index = ws_hash_choose(mac);
