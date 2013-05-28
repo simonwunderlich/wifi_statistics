@@ -64,7 +64,8 @@ struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac)
 
 
 /* like hash_find, but assigns a new element if not present yet */
-struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
+struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac,
+			   unsigned long int num_pkts)
 {
 	struct ws_sta *ws_sta;
 	spinlock_t *list_lock; /* spinlock to protect write access */
@@ -85,7 +86,7 @@ struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
 	/* initialise all the packet list related members */
 	INIT_LIST_HEAD(&ws_sta->pkt_list);
 	spin_lock_init(&ws_sta->pkt_list_lock);
-	atomic_set(&ws_sta->pkt_count, 2);
+	atomic_set(&ws_sta->pkt_count, num_pkts);
 
 	/* add new element */
 	index = ws_hash_choose(mac);

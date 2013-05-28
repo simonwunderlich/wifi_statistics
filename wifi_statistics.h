@@ -40,6 +40,7 @@
 #define WS_EWMA_FACTOR		2
 #define WS_EWMA_WEIGHT		2
 
+#define WS_MAX_PACKETS		50
 #define NUM_UCAST_TID		IEEE80211_NUM_TIDS
 #define BCAST_TID		NUM_UCAST_TID
 #define NUM_TIDS		(NUM_UCAST_TID + 1)
@@ -79,6 +80,7 @@ struct ws_monif {
 	enum ws_mode ws_mode;
 	struct ws_hash hash;
 	struct dentry *dir;
+	atomic_t num_packets;
 
 	atomic_t refcount;
 	struct rcu_head rcu;
@@ -115,7 +117,8 @@ int ws_monif_deactivate(struct ws_monif *monif);
 /* hash */
 int ws_hash_init(struct ws_hash *hash);
 int ws_hash_free(struct ws_hash *hash);
-struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac);
+struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac,
+			   unsigned long int num_pkts);
 
 /* station */
 void ws_sta_free_ref(struct ws_sta *ws_sta);
