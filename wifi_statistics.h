@@ -31,10 +31,10 @@
 #include <net/ieee80211_radiotap.h>
 #include "compat.h"		/* remove if sending this upstream */
 
-#define WIFI_STATISTICS_DRIVER_AUTHOR	"Simon Wunderlich <siwu@hrz.tu-chemnitz.de>"
-#define WIFI_STATISTICS_DRIVER_DESC	"WiFi statistics"
-#define WIFI_STATISTICS_DRIVER_DEVICE	"wifi_statistics"
-#define WIFI_STATISTICS_SOURCE_VERSION 	"broken"
+#define WIFI_STATS_DRIVER_AUTHOR  "Simon Wunderlich <siwu@hrz.tu-chemnitz.de>"
+#define WIFI_STATS_DRIVER_DESC	  "WiFi statistics"
+#define WIFI_STATS_DRIVER_DEVICE  "wifi_statistics"
+#define WIFI_STATS_SOURCE_VERSION "broken"
 
 #define WS_HASH_SIZE		64
 #define WS_EWMA_FACTOR		2
