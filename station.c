@@ -236,7 +236,7 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	 * if the destination is the same as last time on this TID.
 	 */
 	seqno = le16_to_cpu(hdr->seq_ctrl) >> 4;
-	if (memcmp(ws_sta->last_dest[tid], dest, ETH_ALEN) == 0) {
+	if (compare_ether_addr(ws_sta->last_dest[tid], dest) == 0) {
 		int diff;
 
 		diff = (seqno - ws_sta->last_seqno[tid] + (1 << 12));
