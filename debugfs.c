@@ -252,9 +252,7 @@ err:
 
 void ws_debugfs_monif_clean(struct ws_monif *monif)
 {
-	if (monif->dir)
-		debugfs_remove_recursive(monif->dir);
-
+	debugfs_remove_recursive(monif->dir);
 	monif->dir = NULL;
 }
 
