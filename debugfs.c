@@ -66,8 +66,7 @@ static ssize_t write_debug_active(struct file *file,
 	return count;
 }
 
-
-struct file_operations active_fops = {
+const struct file_operations active_fops = {
 	.owner = THIS_MODULE,
 	.open = simple_open,
 	.write = write_debug_active,
@@ -155,7 +154,7 @@ static int ws_sta_debug_open(struct inode *inode, struct file *file)
 	}
 }
 
-struct file_operations stats_fops = {
+const struct file_operations stats_fops = {
 	.owner = THIS_MODULE,
 	.open = ws_sta_debug_open,
 	.read = seq_read,
@@ -209,7 +208,7 @@ static ssize_t write_file_mode(struct file *file, const char __user *user_buf,
 	return count;
 }
 
-struct file_operations mode_fops = {
+const struct file_operations mode_fops = {
 	.owner = THIS_MODULE,
 	.open = simple_open,
 	.write = write_file_mode,
