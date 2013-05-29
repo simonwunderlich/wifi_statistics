@@ -22,11 +22,11 @@
 
 struct list_head monif_list;
 
-void ws_monif_free_rcu(struct rcu_head *rcu)
+void ws_monif_free_rcu(struct rcu_head *head)
 {
 	struct ws_monif *monif;
 
-	monif = container_of(rcu, struct ws_monif, rcu);
+	monif = container_of(head, struct ws_monif, rcu);
 	dev_put(monif->net_dev);
 	kfree(monif);
 }
