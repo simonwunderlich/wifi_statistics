@@ -64,7 +64,7 @@ enum ws_mode {
 
 struct ws_hash {
 	struct hlist_head table[WS_HASH_SIZE];
-	spinlock_t list_locks[WS_HASH_SIZE];
+	spinlock_t list_locks[WS_HASH_SIZE]; /* protects table */
 };
 
 struct ws_monif {
