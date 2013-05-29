@@ -122,7 +122,7 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
 		if (!first)
-			seq_puts(seq, ",");
+			seq_puts(seq, ",\n");
 		seq_puts(seq, "\t\t{\n");
 		seq_printf(seq, "\t\t\t\"tid\": %d,\n", i);
 		seq_printf(seq, "\t\t\t\"last seqno\": %d",
