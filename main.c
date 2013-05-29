@@ -82,8 +82,8 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 		goto end;
 
 	len = ieee80211_get_radiotap_len(skb->data);
-	rthdr = (struct ieee80211_radiotap_header *) skb->data;
-	hdr = (struct ieee80211_hdr *) skb_pull(skb, len);
+	rthdr = (struct ieee80211_radiotap_header *)skb->data;
+	hdr = (struct ieee80211_hdr *)skb_pull(skb, len);
 
 	if (unlikely(!pskb_may_pull(skb, sizeof(fc))))
 		goto end;

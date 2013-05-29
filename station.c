@@ -61,7 +61,7 @@ static void ws_sta_print_detail(struct seq_file *seq,
 	seq_printf(seq, "%s\t\"sum_square\": %llu,\n", tabs,
 		   detail->sum_square);
 	seq_printf(seq, "%s\t\"ewma\": %d\n", tabs,
-		  (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
+		   (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
 	seq_printf(seq, "%s}", tabs);
 }
 
@@ -247,7 +247,6 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 			diff -= 1 << 12;
 
 		ws_sta_detailed_apply(&ws_sta->seqno_diff[tid], diff);
-
 	}
 
 	memcpy(ws_sta->last_dest[tid], dest, ETH_ALEN);

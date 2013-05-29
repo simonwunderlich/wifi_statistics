@@ -25,7 +25,7 @@ static struct dentry *ws_debugfs;
 static ssize_t read_debug_active(struct file *file, char __user *user_buf,
 			      size_t count, loff_t *ppos)
 {
-	struct ws_monif *monif = (struct ws_monif *) file->private_data;
+	struct ws_monif *monif = (struct ws_monif *)file->private_data;
 	char buf[32];
 	ssize_t len;
 
@@ -38,7 +38,7 @@ static ssize_t write_debug_active(struct file *file,
 				  const char __user *user_buf, size_t count,
 				  loff_t *ppos)
 {
-	struct ws_monif *monif = (struct ws_monif *) file->private_data;
+	struct ws_monif *monif = (struct ws_monif *)file->private_data;
 	char buf[32];
 	ssize_t len;
 	unsigned long old, active;
@@ -76,7 +76,7 @@ const struct file_operations active_fops = {
 
 int ws_sta_seq_read(struct seq_file *seq, void *offset)
 {
-	struct ws_monif *monif = (struct ws_monif *) seq->private;
+	struct ws_monif *monif = (struct ws_monif *)seq->private;
 	struct ws_hash *hash = &monif->hash;
 	struct hlist_head *head;
 	struct ws_sta *ws_sta;
@@ -105,7 +105,7 @@ int ws_sta_seq_read(struct seq_file *seq, void *offset)
 
 int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 {
-	struct ws_monif *monif = (struct ws_monif *) seq->private;
+	struct ws_monif *monif = (struct ws_monif *)seq->private;
 	struct ws_hash *hash = &monif->hash;
 	struct hlist_head *head;
 	struct hlist_node *node;
@@ -140,7 +140,7 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 
 static int ws_sta_debug_open(struct inode *inode, struct file *file)
 {
-	struct ws_monif *monif = (struct ws_monif *) inode->i_private;
+	struct ws_monif *monif = (struct ws_monif *)inode->i_private;
 
 	if (!atomic_read(&monif->active))
 		return -1;
@@ -165,7 +165,7 @@ const struct file_operations stats_fops = {
 static ssize_t read_file_mode(struct file *file, char __user *user_buf,
 			      size_t count, loff_t *ppos)
 {
-	struct ws_monif *monif = (struct ws_monif *) file->private_data;
+	struct ws_monif *monif = (struct ws_monif *)file->private_data;
 	char *mode;
 	ssize_t len;
 
@@ -188,7 +188,7 @@ static ssize_t read_file_mode(struct file *file, char __user *user_buf,
 static ssize_t write_file_mode(struct file *file, const char __user *user_buf,
 			       size_t count, loff_t *ppos)
 {
-	struct ws_monif *monif = (struct ws_monif *) file->private_data;
+	struct ws_monif *monif = (struct ws_monif *)file->private_data;
 	char buf[32];
 	ssize_t len;
 
@@ -264,7 +264,6 @@ void ws_debugfs_init(void)
 
 	if (!ws_debugfs)
 		debugfs_remove_recursive(ws_debugfs);
-
 }
 
 void ws_debugfs_destroy(void)
