@@ -48,7 +48,7 @@ static ssize_t write_debug_active(struct file *file,
 		return -EFAULT;
 
 	buf[len] = '\0';
-	if (strict_strtoul(buf, 0, &active))
+	if (kstrtoul(buf, 0, &active))
 		return -EINVAL;
 
 	active = !!active;
