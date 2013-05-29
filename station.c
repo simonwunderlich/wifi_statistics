@@ -39,7 +39,7 @@ void ws_sta_init(struct ws_sta *ws_sta)
 
 	for (i = 0; i < NUM_TIDS; i++) {
 		ws_sta->last_seqno[i] = -1;
-		memset(ws_sta->last_dest[i], 0, sizeof(ws_sta->last_dest[i]));
+		eth_zero_addr(ws_sta->last_dest[i]);
 		ws_sta_init_detail(&ws_sta->seqno_diff[i]);
 	}
 
