@@ -34,8 +34,9 @@ static ssize_t read_debug_active(struct file *file, char __user *user_buf,
 }
 
 
-static ssize_t write_debug_active(struct file *file, const char __user *user_buf,
-				  size_t count, loff_t *ppos)
+static ssize_t write_debug_active(struct file *file,
+				  const char __user *user_buf, size_t count,
+				  loff_t *ppos)
 {
 	struct ws_monif *monif = (struct ws_monif *) file->private_data;
 	char buf[32];
@@ -93,7 +94,7 @@ int ws_sta_seq_read(struct seq_file *seq, void *offset)
 		rcu_read_lock();
 		hlist_for_each_entry_rcu(ws_sta, head, hash_entry) {
 			if (!first)
-				seq_printf(seq, ",");
+				seq_puts(seq, ",");
 			ws_sta_seq_print(ws_sta, seq, offset);
 			first = false;
 		}
@@ -126,7 +127,7 @@ int ws_sta_seq_read_reset(struct seq_file *seq, void *offset)
 		spin_lock_bh(list_lock);
 		hlist_for_each_entry_safe(ws_sta, node, head, hash_entry) {
 			if (!first)
-				seq_printf(seq, ",");
+				seq_puts(seq, ",");
 			ws_sta_seq_print(ws_sta, seq, offset);
 			hlist_del_rcu(&ws_sta->hash_entry);
 			ws_sta_free_ref(ws_sta);
@@ -158,7 +159,7 @@ struct file_operations stats_fops = {
 	.owner = THIS_MODULE,
 	.open = ws_sta_debug_open,
 	.read = seq_read,
-	.llseek= seq_lseek,
+	.llseek = seq_lseek,
 	.release = single_release,
 };
 
@@ -198,13 +199,12 @@ static ssize_t write_file_mode(struct file *file, const char __user *user_buf,
 
 	buf[len] = '\0';
 
-	if (strncmp("read", buf, 4) == 0) {
+	if (strncmp("read", buf, 4) == 0)
 		monif->ws_mode = MODE_READ;
-	} else if (strncmp("reset", buf, 4) == 0) {
+	else if (strncmp("reset", buf, 4) == 0)
 		monif->ws_mode = MODE_RESET;
-	} else {
+	else
 		return -EINVAL;
-	}
 
 	return count;
 }
@@ -235,14 +235,14 @@ void ws_debugfs_monif_init(struct ws_monif *monif)
 		goto err;
 
 	file = debugfs_create_file("active",
-				   S_IFREG | S_IRUGO | S_IWUGO, monif->dir, monif,
-				   &active_fops);
+				   S_IFREG | S_IRUGO | S_IWUGO, monif->dir,
+				   monif, &active_fops);
 	if (!file)
 		goto err;
 
 	file = debugfs_create_file("mode",
-				   S_IFREG | S_IRUGO | S_IWUGO, monif->dir, monif,
-				   &mode_fops);
+				   S_IFREG | S_IRUGO | S_IWUGO, monif->dir,
+				   monif, &mode_fops);
 	if (!file)
 		goto err;
 
@@ -272,8 +272,6 @@ void ws_debugfs_init(void)
 
 void ws_debugfs_destroy(void)
 {
-        debugfs_remove_recursive(ws_debugfs);
-        ws_debugfs = NULL;
+	debugfs_remove_recursive(ws_debugfs);
+	ws_debugfs = NULL;
 }
-
-

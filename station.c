@@ -58,7 +58,8 @@ static void ws_sta_print_detail(struct seq_file *seq,
 	seq_printf(seq, "%s\t\"max\": %d,\n", tabs, detail->max);
 	seq_printf(seq, "%s\t\"count\": %d,\n", tabs, detail->count);
 	seq_printf(seq, "%s\t\"sum\": %d,\n", tabs, detail->sum);
-	seq_printf(seq, "%s\t\"sum_square\": %llu,\n", tabs, detail->sum_square);
+	seq_printf(seq, "%s\t\"sum_square\": %llu,\n", tabs,
+		   detail->sum_square);
 	seq_printf(seq, "%s\t\"ewma\": %d\n", tabs,
 		  (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
 	seq_printf(seq, "%s}", tabs);
@@ -81,13 +82,13 @@ char *ws_sta_get_type(enum ws_sta_type type)
 
 int ws_sta_seq_print_head(struct seq_file *seq)
 {
-	seq_printf(seq, "{\n\"stations\": [");
+	seq_puts(seq, "{\n\"stations\": [");
 	return 0;
 }
 
 int ws_sta_seq_print_tail(struct seq_file *seq)
 {
-	seq_printf(seq, "\n\t]\n}\n");
+	seq_puts(seq, "\n\t]\n}\n");
 	return 0;
 }
 
@@ -96,51 +97,54 @@ int ws_sta_seq_print(struct ws_sta *ws_sta, struct seq_file *seq, void *offset)
 	bool first = true;
 	int i;
 
-	seq_printf(seq, "\n\t{\n");
+	seq_puts(seq, "\n\t{\n");
 	seq_printf(seq, "\t\"mac\":\"%pM\",\n", ws_sta->mac);
-	seq_printf(seq, "\t\"signal\": ");
+	seq_puts(seq, "\t\"signal\": ");
 	ws_sta_print_detail(seq, &ws_sta->signal, "\t");
-	seq_printf(seq, ",\n");
-	seq_printf(seq, "\t\"rate (100 kbps)\": ");
+	seq_puts(seq, ",\n");
+	seq_puts(seq, "\t\"rate (100 kbps)\": ");
 	ws_sta_print_detail(seq, &ws_sta->rate, "\t");
-	seq_printf(seq, ",\n");
+	seq_puts(seq, ",\n");
 	seq_printf(seq, "\t\"bad fcs packets\": %d,\n", ws_sta->bad_fcs);
 	seq_printf(seq, "\t\"total packets\": %d,\n", ws_sta->rx_packets);
 	seq_printf(seq, "\t\"total bytes\": %llu,\n", ws_sta->rx_bytes);
-	seq_printf(seq, "\t\"last seen (msec)\": %d,\n", jiffies_to_msecs(jiffies - ws_sta->last_seen));
+	seq_printf(seq, "\t\"last seen (msec)\": %d,\n",
+		   jiffies_to_msecs(jiffies - ws_sta->last_seen));
 	if (ws_sta->interval.count > 0) {
-		seq_printf(seq, "\t\"packet interval\": ");
-	        ws_sta_print_detail(seq, &ws_sta->interval, "\t");
-		seq_printf(seq, ",\n");
+		seq_puts(seq, "\t\"packet interval\": ");
+		ws_sta_print_detail(seq, &ws_sta->interval, "\t");
+		seq_puts(seq, ",\n");
 	}
 	seq_printf(seq, "\t\"BSSID\": \"%pM\",\n", ws_sta->bssid);
 	seq_printf(seq, "\t\"type\": \"%s\",\n", ws_sta_get_type(ws_sta->type));
-	seq_printf(seq, "\t\"seqno\": [\n");
+	seq_puts(seq, "\t\"seqno\": [\n");
 	for (i = 0; i < NUM_TIDS; i++) {
 		if (ws_sta->last_seqno[i] < 0)
 			continue;
 		if (!first)
-			seq_printf(seq, ",");
-		seq_printf(seq, "\t\t{\n");
-		seq_printf(seq, "\t\t\t\"tid\": %d, \n", i);
-		seq_printf(seq, "\t\t\t\"last seqno\": %d", ws_sta->last_seqno[i]);
+			seq_puts(seq, ",");
+		seq_puts(seq, "\t\t{\n");
+		seq_printf(seq, "\t\t\t\"tid\": %d,\n", i);
+		seq_printf(seq, "\t\t\t\"last seqno\": %d",
+			   ws_sta->last_seqno[i]);
 		if (ws_sta->seqno_diff[i].count > 0)  {
-			seq_printf(seq, ",\n\t\t\t\"difference\": ");
-			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i], "\t\t\t");
+			seq_puts(seq, ",\n\t\t\t\"difference\": ");
+			ws_sta_print_detail(seq, &ws_sta->seqno_diff[i],
+					    "\t\t\t");
 		}
 		first = false;
-		seq_printf(seq, "\n\t\t}");
+		seq_puts(seq, "\n\t\t}");
 	}
-	seq_printf(seq, "\n\t\t]\n");
-	seq_printf(seq, "\n\t}");
+	seq_puts(seq, "\n\t\t]\n");
+	seq_puts(seq, "\n\t}");
 	return 0;
 }
 
 static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
 {
 	detail->last = value;
-	detail->min = min((int)value, detail->min);
-	detail->max = max((int)value, detail->max);
+	detail->min = min_t(int, value, detail->min);
+	detail->max = max_t(int, value, detail->max);
 	detail->count++;
 	detail->sum += value;
 	detail->sum_square += ((u64) value) * ((u64) value);
@@ -217,12 +221,14 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	 * for details.
 	 */
 	dest = hdr->addr1;
-	if (is_multicast_ether_addr(dest))
+	if (is_multicast_ether_addr(dest)) {
 		tid = BCAST_TID;
-	else if (ieee80211_is_data_qos(hdr->frame_control)) {
+	} else if (ieee80211_is_data_qos(hdr->frame_control)) {
 		u8 *qc = ieee80211_get_qos_ctl(hdr);
 		tid = *qc & IEEE80211_QOS_CTL_TID_MASK;
-	} else tid = BCAST_TID;
+	} else {
+		tid = BCAST_TID;
+	}
 
 	/* Keeping track of all destinations of any station appears
 	 * to be unreasonable overhead. Therefore, we use a best
@@ -233,7 +239,8 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	if (memcmp(ws_sta->last_dest[tid], dest, ETH_ALEN) == 0) {
 		int diff;
 
-		diff = (seqno - ws_sta->last_seqno[tid] + (1 << 12)) % (1 << 12);
+		diff = (seqno - ws_sta->last_seqno[tid] + (1 << 12));
+		diff %= (1 << 12);
 
 		/* jumped backwards? */
 		if (diff > (1 << 11))
@@ -244,7 +251,7 @@ int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 	}
 
 	memcpy(ws_sta->last_dest[tid], dest, ETH_ALEN);
-        ws_sta->last_seqno[tid] = seqno;
+	ws_sta->last_seqno[tid] = seqno;
 
 	return 0;
 }
@@ -265,7 +272,8 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 
 		switch (iterator.this_arg_index) {
 		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL: {
-			ws_sta_detailed_apply(&ws_sta->signal, (s8) *iterator.this_arg);
+			ws_sta_detailed_apply(&ws_sta->signal,
+					      (s8)*iterator.this_arg);
 			break;
 		}
 		case IEEE80211_RADIOTAP_FLAGS:
@@ -273,7 +281,8 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 				ws_sta->bad_fcs++;
 			break;
 		case IEEE80211_RADIOTAP_RATE:
-			ws_sta_detailed_apply(&ws_sta->rate, ((u8) *iterator.this_arg) * 5);
+			ws_sta_detailed_apply(&ws_sta->rate,
+					      ((u8)*iterator.this_arg) * 5);
 			break;
 		case IEEE80211_RADIOTAP_MCS: {
 			/* 0 = mcs_details

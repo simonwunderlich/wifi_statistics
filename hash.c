@@ -31,7 +31,7 @@ static inline u32 ws_hash_choose(void *mac)
 		hash += (hash << 10);
 		hash ^= (hash >> 6);
 	}
-	return (hash % WS_HASH_SIZE);
+	return hash % WS_HASH_SIZE;
 }
 
 /* try to find an element in the hash, return NULL if not found */
@@ -70,7 +70,7 @@ struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
 	spinlock_t *list_lock; /* spinlock to protect write access */
 	struct hlist_head *head;
 	u32 index;
-	
+
 	ws_sta = ws_hash_find(hash, mac);
 	if (ws_sta)
 		return ws_sta;

@@ -57,7 +57,7 @@ ws_monif_free_ref(struct ws_monif *monif)
 
 rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 {
-        struct ieee80211_radiotap_header *rthdr;
+	struct ieee80211_radiotap_header *rthdr;
 	struct ieee80211_hdr *hdr;
 	struct ws_sta *ws_sta = NULL;
 	struct ws_monif *monif = NULL;
@@ -78,14 +78,14 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 	if (!atomic_read(&monif->active))
 		goto end;
 
-        if (unlikely(!pskb_may_pull(skb, sizeof(*rthdr))))
+	if (unlikely(!pskb_may_pull(skb, sizeof(*rthdr))))
 		goto end;
 
 	len = ieee80211_get_radiotap_len(skb->data);
 	rthdr = (struct ieee80211_radiotap_header *) skb->data;
 	hdr = (struct ieee80211_hdr *) skb_pull(skb, len);
 
-        if (unlikely(!pskb_may_pull(skb, sizeof(fc))))
+	if (unlikely(!pskb_may_pull(skb, sizeof(fc))))
 		goto end;
 
 	fc = hdr->frame_control;

@@ -27,8 +27,8 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
 static inline int debug_open(struct inode *inode, struct file *file)
 {
-       file->private_data = inode->i_private;
-       return 0;
+	file->private_data = inode->i_private;
+	return 0;
 }
 
 #define simple_open	debug_open
@@ -85,7 +85,7 @@ static inline u32 cfg80211_calculate_bitrate(struct rate_info *rate)
 
 #undef hlist_for_each_entry_rcu
 #define hlist_for_each_entry_rcu(pos, head, member) \
-	for (pos = hlist_entry_safe (rcu_dereference_raw(hlist_first_rcu(head)),\
+	for (pos = hlist_entry_safe(rcu_dereference_raw(hlist_first_rcu(head)),\
 	typeof(*(pos)), member); \
 	pos; \
 	pos = hlist_entry_safe(rcu_dereference_raw(hlist_next_rcu(\
