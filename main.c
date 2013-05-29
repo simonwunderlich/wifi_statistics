@@ -176,7 +176,7 @@ int ws_monif_register(struct net_device *net_dev)
 
 	monif = kzalloc(sizeof(*monif), GFP_KERNEL);
 	if (!monif)
-		return -EBUSY;
+		return -ENOMEM;
 
 	dev_hold(net_dev);
 
