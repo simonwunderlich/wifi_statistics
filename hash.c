@@ -82,6 +82,11 @@ struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac)
 	ws_sta_init(ws_sta);
 	memcpy(ws_sta->mac, mac, ETH_ALEN);
 
+	/* initialise all the packet list related members */
+	INIT_LIST_HEAD(&ws_sta->pkt_list);
+	spin_lock_init(&ws_sta->pkt_list_lock);
+	atomic_set(&ws_sta->pkt_count, 2);
+
 	/* add new element */
 	index = ws_hash_choose(mac);
 	head = &hash->table[index];

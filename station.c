@@ -20,10 +20,25 @@
 
 #include "wifi_statistics.h"
 
+static void ws_sta_free_rcu(struct rcu_head *rcu)
+{
+	struct ws_sta *ws_sta;
+	struct ws_pkt *pkt, *tmp;
+
+	ws_sta = container_of(rcu, struct ws_sta, rcu);
+
+	/* no need to lock because the object is not held by anybody else */
+	list_for_each_entry_safe(pkt, tmp, &ws_sta->pkt_list, list) {
+		kfree(pkt);
+	}
+
+	kfree(ws_sta);
+}
+
 void ws_sta_free_ref(struct ws_sta *ws_sta)
 {
 	if (atomic_dec_and_test(&ws_sta->refcount))
-		kfree_rcu(ws_sta, rcu);
+		call_rcu(&ws_sta->rcu, ws_sta_free_rcu);
 }
 
 void ws_sta_init_detail(struct ws_sta_detailed *detail)

@@ -62,6 +62,7 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 	struct ws_sta *ws_sta = NULL;
 	struct ws_monif *monif = NULL;
 	struct sk_buff *skb = NULL;
+	struct ws_pkt *ws_pkt;
 	__le16 fc;
 	int len, hdrlen;
 	static u8 nullmac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0};
@@ -107,13 +108,33 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 		mac = hdr->addr2;
 
 	ws_sta = ws_hash_get(&monif->hash, mac);
-
 	if (!ws_sta)
 		goto end;
 
 	ws_sta_general(ws_sta, skb);
 	ws_sta_parse_radiotap(ws_sta, rthdr, len);
 	ws_sta_parse_ieee80211_hdr(ws_sta, hdr, hdrlen);
+
+	spin_lock_bh(&ws_sta->pkt_list_lock);
+	if (atomic_add_unless(&ws_sta->pkt_count, -1, 0)) {
+		/* if the list is not full, allocate a new object */
+		ws_pkt = kzalloc(sizeof(*ws_pkt), GFP_ATOMIC);
+		if (!ws_pkt)
+			goto end;
+	} else {
+		/* otherwise take the head (the least recent packet) and re-add
+		 * it to the tail of the queue
+		 */
+		ws_pkt = list_entry_rcu(&ws_sta->pkt_list, struct ws_pkt, list);
+		list_del_rcu(&ws_pkt->list);
+	}
+
+	ws_pkt->rssi = (int8_t)ws_sta->signal.last;
+	ws_pkt->timestamp = jiffies;
+
+	/* add the new element at the end of the list */
+	list_add_tail_rcu(&ws_pkt->list, &ws_sta->pkt_list);
+	spin_unlock_bh(&ws_sta->pkt_list_lock);
 
 	ws_sta_free_ref(ws_sta);
 end:

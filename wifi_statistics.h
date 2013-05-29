@@ -67,6 +67,12 @@ struct ws_hash {
 	spinlock_t list_locks[WS_HASH_SIZE]; /* protects table */
 };
 
+struct ws_pkt {
+	int8_t rssi;
+	unsigned long timestamp;
+	struct list_head list;
+};
+
 struct ws_monif {
 	struct net_device *net_dev;
 	atomic_t active;
@@ -93,6 +99,9 @@ struct ws_sta {
 	s16 last_seqno[NUM_TIDS];
 	u8 last_dest[NUM_TIDS][ETH_ALEN];
 	struct ws_sta_detailed seqno_diff[NUM_TIDS];
+	struct list_head pkt_list;
+	spinlock_t pkt_list_lock; /* protects pkt_list */
+	atomic_t pkt_count;
 	atomic_t refcount;
 	struct rcu_head rcu;
 
