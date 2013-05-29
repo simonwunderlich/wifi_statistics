@@ -92,7 +92,6 @@ struct ws_sta {
 	s16 last_seqno[NUM_TIDS];
 	u8 last_dest[NUM_TIDS][ETH_ALEN];
 	struct ws_sta_detailed seqno_diff[NUM_TIDS];
-	spinlock_t lock;
 	atomic_t refcount;
 	struct rcu_head rcu;
 

@@ -35,7 +35,7 @@ void ws_sta_init_detail(struct ws_sta_detailed *detail)
 void ws_sta_init(struct ws_sta *ws_sta)
 {
 	int i;
-	spin_lock_init(&ws_sta->lock);
+
 	for (i = 0; i < NUM_TIDS; i++) {
 		ws_sta->last_seqno[i] = -1;
 		memset(ws_sta->last_dest[i], 0, sizeof(ws_sta->last_dest[i]));
