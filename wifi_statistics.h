@@ -71,6 +71,7 @@ struct ws_hash {
 struct ws_pkt {
 	int8_t rssi;
 	unsigned long timestamp;
+
 	struct list_head list;
 };
 

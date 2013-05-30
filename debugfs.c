@@ -152,7 +152,7 @@ static int ws_sta_debug_open(struct inode *inode, struct file *file)
 		return single_open(file, ws_sta_seq_read_reset, monif);
 	default:
 		/* should never happen */
-		WARN_ON("wrong monitor ws_mode (%d)\n", monif->ws_mode);
+		WARN(1, "wrong monitor ws_mode (%d)\n", monif->ws_mode);
 		return -1;
 	}
 }
@@ -265,6 +265,108 @@ const struct file_operations num_packets_fops = {
 	.llseek = default_llseek,
 };
 
+static int packets_seq_read(struct seq_file *seq, void *offset)
+{
+	struct ws_monif *monif = (struct ws_monif *)seq->private;
+	struct ws_hash *hash = &monif->hash;
+	struct hlist_head *head;
+	struct ws_pkt *ws_pkt;
+	struct ws_sta *ws_sta;
+	int i;
+
+	if (!atomic_read(&monif->active))
+		return -1;
+
+	seq_puts(seq, "              mac rssi       time\n");
+
+	for (i = 0; i < WS_HASH_SIZE; i++) {
+		head = &hash->table[i];
+
+		rcu_read_lock();
+		hlist_for_each_entry_rcu(ws_sta, head, hash_entry) {
+			list_for_each_entry_rcu(ws_pkt, &ws_sta->pkt_list,
+						list) {
+				seq_printf(seq, "%pM %4d %10u\n", ws_sta->mac,
+					   ws_pkt->rssi,
+					   jiffies_to_usecs(ws_pkt->timestamp));
+			}
+		}
+		rcu_read_unlock();
+	}
+
+	return 0;
+}
+
+static int packets_seq_reset(struct seq_file *seq, void *offset)
+{
+	struct ws_monif *monif = (struct ws_monif *)seq->private;
+	struct ws_hash *hash = &monif->hash;
+	struct ws_pkt *ws_pkt, *tmp_pkt;
+	struct hlist_head *head;
+	struct hlist_node *tmp;
+	struct ws_sta *ws_sta;
+	spinlock_t *list_lock;
+	int i;
+
+	if (!atomic_read(&monif->active))
+		return -1;
+
+	seq_puts(seq, "              mac rssi       time\n");
+
+	for (i = 0; i < WS_HASH_SIZE; i++) {
+		head = &hash->table[i];
+		list_lock = &hash->list_locks[i];
+
+		spin_lock_bh(list_lock);
+		hlist_for_each_entry_safe(ws_sta, tmp, head, hash_entry) {
+			spin_lock_bh(&ws_sta->pkt_list_lock);
+			list_for_each_entry_safe(ws_pkt, tmp_pkt,
+						 &ws_sta->pkt_list, list) {
+				seq_printf(seq, "%pM %4d %10u\n", ws_sta->mac,
+					   ws_pkt->rssi,
+					   jiffies_to_usecs(ws_pkt->timestamp));
+
+				list_del_rcu(&ws_pkt->list);
+				kfree(ws_pkt);
+			}
+			spin_unlock_bh(&ws_sta->pkt_list_lock);
+
+			hlist_del_rcu(&ws_sta->hash_entry);
+			ws_sta_free_ref(ws_sta);
+		}
+		spin_unlock_bh(list_lock);
+	}
+
+	return 0;
+}
+
+static int packets_seq_open(struct inode *inode, struct file *file)
+{
+	struct ws_monif *monif = (struct ws_monif *)inode->i_private;
+
+	if (!atomic_read(&monif->active))
+		return -1;
+
+	switch (monif->ws_mode) {
+	case MODE_READ:
+		return single_open(file, packets_seq_read, monif);
+	case MODE_RESET:
+		return single_open(file, packets_seq_reset, monif);
+	default:
+		/* should never happen */
+		WARN(1, "wrong monitor ws_mode (%d)\n", monif->ws_mode);
+		return -1;
+	}
+}
+
+struct file_operations packets_fops = {
+	.owner = THIS_MODULE,
+	.open = packets_seq_open,
+	.read = seq_read,
+	.llseek= seq_lseek,
+	.release = single_release,
+};
+
 void ws_debugfs_monif_init(struct ws_monif *monif)
 {
 	struct dentry *file;
@@ -297,6 +399,12 @@ void ws_debugfs_monif_init(struct ws_monif *monif)
 	file = debugfs_create_file("num_packets",
 				   S_IFREG | S_IRUGO | S_IWUGO, monif->dir,
 				   monif, &num_packets_fops);
+	if (!file)
+		goto err;
+
+	file = debugfs_create_file("packets",
+				   S_IFREG | S_IRUGO, monif->dir, monif,
+				   &packets_fops);
 	if (!file)
 		goto err;
 

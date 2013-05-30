@@ -117,18 +117,16 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 	ws_sta_parse_ieee80211_hdr(ws_sta, hdr, hdrlen);
 
 	spin_lock_bh(&ws_sta->pkt_list_lock);
-	if (atomic_add_unless(&ws_sta->pkt_count, -1, 0)) {
-		/* if the list is not full, allocate a new object */
-		ws_pkt = kzalloc(sizeof(*ws_pkt), GFP_ATOMIC);
-		if (!ws_pkt)
-			goto end;
-	} else {
-		/* otherwise take the head (the least recent packet) and re-add
-		 * it to the tail of the queue
-		 */
-		ws_pkt = list_entry_rcu(&ws_sta->pkt_list, struct ws_pkt, list);
+	if (!atomic_add_unless(&ws_sta->pkt_count, -1, 0)) {
+		ws_pkt = list_first_or_null_rcu(&ws_sta->pkt_list,
+						struct ws_pkt, list);
 		list_del_rcu(&ws_pkt->list);
+		kfree(ws_pkt);
 	}
+
+	ws_pkt = kzalloc(sizeof(*ws_pkt), GFP_ATOMIC);
+	if (!ws_pkt)
+		goto end;
 
 	ws_pkt->rssi = (int8_t)ws_sta->signal.last;
 	ws_pkt->timestamp = jiffies;

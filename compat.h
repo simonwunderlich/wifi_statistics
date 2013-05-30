@@ -68,6 +68,16 @@ static inline u32 cfg80211_calculate_bitrate(struct rate_info *rate)
 
 #endif /* < KERNEL_VERSION(3, 4, 0) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
+
+#define list_first_or_null_rcu(ptr, type, member) \
+	({struct list_head *__ptr = (ptr); \
+	  struct list_head __rcu *__next = list_next_rcu(__ptr); \
+	  likely(__ptr != __next) ? container_of(__next, type, member) : NULL; \
+	})
+
+#endif /* < KERNEL_VERSION(3, 5, 0) */
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
 
 #ifndef hlist_entry_safe
