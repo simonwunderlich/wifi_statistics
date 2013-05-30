@@ -48,7 +48,7 @@ struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac)
 
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(tmp_sta, head, hash_entry) {
-		if (memcmp(mac, tmp_sta->mac, ETH_ALEN))
+		if (compare_ether_addr(mac, tmp_sta->mac))
 			continue;
 
 		if (!atomic_inc_not_zero(&tmp_sta->refcount))
