@@ -148,9 +148,12 @@ static int ws_sta_debug_open(struct inode *inode, struct file *file)
 	switch (monif->ws_mode) {
 	case MODE_READ:
 		return single_open(file, ws_sta_seq_read, monif);
-	default:
 	case MODE_RESET:
 		return single_open(file, ws_sta_seq_read_reset, monif);
+	default:
+		/* should never happen */
+		WARN_ON("wrong monitor ws_mode (%d)\n", monif->ws_mode);
+		return -1;
 	}
 }
 
