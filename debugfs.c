@@ -174,13 +174,13 @@ static ssize_t read_file_mode(struct file *file, char __user *user_buf,
 
 	switch (monif->ws_mode) {
 	case MODE_READ:
-		mode = "read";
+		mode = "read\n";
 		break;
 	case MODE_RESET:
-		mode = "reset";
+		mode = "reset\n";
 		break;
 	default:
-		mode = "unknown";
+		mode = "unknown\n";
 		break;
 	}
 
