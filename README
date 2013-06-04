@@ -21,7 +21,7 @@ USAGE
 Usage:
 
 1. Create monitor device mon0, for example by doing:
-	iw phy phy0 interface add mon0 type monitor flags control fcsfail
+	iw phy phy0 interface add mon0 type monitor flags control
 	ifconfig mon0 up
 
 2. insert the kernel module:
