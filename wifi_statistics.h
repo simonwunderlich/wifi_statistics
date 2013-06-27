@@ -112,6 +112,7 @@ struct ws_sta *ws_hash_get(struct ws_hash *hash, u8 *mac);
 void ws_sta_free_ref(struct ws_sta *ws_sta);
 void ws_sta_init(struct ws_sta *ws_sta);
 int ws_sta_general(struct ws_sta *ws_sta, struct sk_buff *skb);
+struct ws_sta *ws_hash_find(struct ws_hash *hash, u8 *mac);
 int ws_sta_parse_ieee80211_hdr(struct ws_sta *ws_sta,
 			       struct ieee80211_hdr *hdr, int len);
 int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
