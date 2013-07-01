@@ -129,7 +129,7 @@ rx_handler_result_t ws_handle_frame(struct sk_buff **pskb)
 		goto end;
 
 	ws_pkt->rssi = (int8_t)ws_sta->signal.last;
-	ws_pkt->timestamp = jiffies;
+	getnstimeofday(&ws_pkt->time);
 
 	/* add the new element at the end of the list */
 	list_add_tail_rcu(&ws_pkt->list, &ws_sta->pkt_list);

@@ -70,7 +70,7 @@ struct ws_hash {
 
 struct ws_pkt {
 	int8_t rssi;
-	unsigned long timestamp;
+	struct timespec time;
 
 	struct list_head list;
 };
