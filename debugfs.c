@@ -286,7 +286,7 @@ static int packets_seq_read(struct seq_file *seq, void *offset)
 		hlist_for_each_entry_rcu(ws_sta, head, hash_entry) {
 			list_for_each_entry_rcu(ws_pkt, &ws_sta->pkt_list,
 						list) {
-				seq_printf(seq, "%pM %4d %lu%9lu\n",
+				seq_printf(seq, "%pM %4d %lu%09lu\n",
 					   ws_sta->mac, ws_pkt->rssi,
 					   ws_pkt->time.tv_sec,
 					   ws_pkt->time.tv_nsec);
@@ -323,7 +323,7 @@ static int packets_seq_reset(struct seq_file *seq, void *offset)
 			spin_lock_bh(&ws_sta->pkt_list_lock);
 			list_for_each_entry_safe(ws_pkt, tmp_pkt,
 						 &ws_sta->pkt_list, list) {
-				seq_printf(seq, "%pM %4d %lu%9lu\n",
+				seq_printf(seq, "%pM %4d %lu%09lu\n",
 					   ws_sta->mac, ws_pkt->rssi,
 					   ws_pkt->time.tv_sec,
 					   ws_pkt->time.tv_nsec);
