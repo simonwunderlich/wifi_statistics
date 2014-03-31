@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013:
- *	Simon Wunderlich <siwu@hrz.tu-chemnitz.de>
+ *	Simon Wunderlich <sw@simonwunderlich.de>
  *	Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
  *
  * This program is free software; you can redistribute it and/or

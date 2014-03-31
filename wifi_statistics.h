@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013:
- *	Simon Wunderlich <siwu@hrz.tu-chemnitz.de>
+ *	Simon Wunderlich <sw@simonwunderlich.de>
  *	Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
  *
  * This program is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@
 #include <net/ieee80211_radiotap.h>
 #include "compat.h"		/* remove if sending this upstream */
 
-#define WIFI_STATS_DRIVER_AUTHOR  "Simon Wunderlich <siwu@hrz.tu-chemnitz.de>"
+#define WIFI_STATS_DRIVER_AUTHOR  "Simon Wunderlich <sw@simonwunderlich.de>"
 #define WIFI_STATS_DRIVER_DESC	  "WiFi statistics"
 #define WIFI_STATS_DRIVER_DEVICE  "wifi_statistics"
 #define WIFI_STATS_SOURCE_VERSION "broken"
