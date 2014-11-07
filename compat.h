@@ -112,3 +112,9 @@ static inline void eth_zero_addr(u8 *addr)
 
 #endif /* < KERNEL_VERSION(3, 9, 0) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+
+#define netdev_notifier_info_to_dev(ptr) ptr
+
+#endif /* < KERNEL_VERSION(3, 11, 0) */
+

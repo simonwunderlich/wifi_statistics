@@ -252,7 +252,7 @@ void ws_monif_unregister(struct ws_monif *monif)
 static int ws_if_notification(struct notifier_block *this,
 			      unsigned long event, void *ptr)
 {
-	struct net_device *net_dev = ptr;
+	struct net_device *net_dev = netdev_notifier_info_to_dev(ptr);
 	struct ws_monif *monif;
 
 	monif = ws_monif_get(net_dev);
