@@ -118,3 +118,9 @@ static inline void eth_zero_addr(u8 *addr)
 
 #endif /* < KERNEL_VERSION(3, 11, 0) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+
+#define bw	flags
+#define RATE_INFO_BW_40		RATE_INFO_FLAGS_40_MHZ_WIDTH
+
+#endif /* < KERNEL_VERSION(4, 0, 0) */

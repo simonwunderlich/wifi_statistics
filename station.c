@@ -293,10 +293,14 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 			struct rate_info rate;
 			int bitrate;
 
-			rate.mcs = mcs_index;
-			rate.flags = RATE_INFO_FLAGS_MCS;
+			rate.flags = 0;
+
 			if (flags & IEEE80211_RADIOTAP_MCS_BW_40)
-				rate.flags |= RATE_INFO_FLAGS_40_MHZ_WIDTH;
+				rate.bw = RATE_INFO_BW_40;
+
+			rate.mcs = mcs_index;
+			rate.flags |= RATE_INFO_FLAGS_MCS;
+
 			if (flags & IEEE80211_RADIOTAP_MCS_SGI)
 				rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
 
