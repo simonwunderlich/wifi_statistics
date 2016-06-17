@@ -30,7 +30,7 @@ void ws_sta_init_detail(struct ws_sta_detailed *detail)
 {
 	detail->min = INT_MAX;
 	detail->max = INT_MIN;
-	ewma_init(&detail->ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT);
+	ewma_ewma_init(&detail->ewma);
 }
 
 void ws_sta_init(struct ws_sta *ws_sta)
@@ -61,7 +61,7 @@ static void ws_sta_print_detail(struct seq_file *seq,
 	seq_printf(seq, "%s\t\"sum_square\": %llu,\n", tabs,
 		   detail->sum_square);
 	seq_printf(seq, "%s\t\"ewma\": %d\n", tabs,
-		   (int)(ewma_read(&detail->ewma) - (INT_MAX>>2)));
+		   (int)(ewma_ewma_read(&detail->ewma) - (INT_MAX>>2)));
 	seq_printf(seq, "%s}", tabs);
 }
 
@@ -148,7 +148,7 @@ static void ws_sta_detailed_apply(struct ws_sta_detailed *detail, int value)
 	detail->count++;
 	detail->sum += value;
 	detail->sum_square += ((u64) value) * ((u64) value);
-	ewma_add(&detail->ewma, value + (INT_MAX>>2));
+	ewma_ewma_add(&detail->ewma, value + (INT_MAX>>2));
 }
 
 int ws_sta_general(struct ws_sta *ws_sta, struct sk_buff *skb)

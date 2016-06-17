@@ -29,6 +29,7 @@
 #include <linux/average.h>
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
+#include "average.h"
 #include "compat.h"		/* remove if sending this upstream */
 
 #define WIFI_STATS_DRIVER_AUTHOR  "Simon Wunderlich <sw@simonwunderlich.de>"
@@ -44,10 +45,12 @@
 #define BCAST_TID		NUM_UCAST_TID
 #define NUM_TIDS		(NUM_UCAST_TID + 1)
 
+DECLARE_EWMA(ewma, WS_EWMA_FACTOR, WS_EWMA_WEIGHT)
+
 struct ws_sta_detailed {
 	int last, min, max, count, sum;
 	u64 sum_square;
-	struct ewma ewma;
+	struct ewma_ewma ewma;
 };
 
 enum ws_sta_type {
