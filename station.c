@@ -20,6 +20,45 @@
 
 #include "wifi_statistics.h"
 
+/* function prototypes and related defs are in include/net/cfg80211.h
+ * This is a copy of the definition from radiotap.c for older kernels.
+ */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
+static const struct radiotap_align_size rtap_namespace_sizes[] = {
+	[IEEE80211_RADIOTAP_TSFT] = { .align = 8, .size = 8, },
+	[IEEE80211_RADIOTAP_FLAGS] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_RATE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_CHANNEL] = { .align = 2, .size = 4, },
+	[IEEE80211_RADIOTAP_FHSS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DBM_ANTSIGNAL] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DBM_ANTNOISE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_LOCK_QUALITY] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_TX_ATTENUATION] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DB_TX_ATTENUATION] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DBM_TX_POWER] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_ANTENNA] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DB_ANTSIGNAL] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DB_ANTNOISE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_RX_FLAGS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_TX_FLAGS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_RTS_RETRIES] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_MCS] = { .align = 1, .size = 3, },
+	[IEEE80211_RADIOTAP_AMPDU_STATUS] = { .align = 4, .size = 8, },
+	[IEEE80211_RADIOTAP_VHT] = { .align = 2, .size = 12, },
+	/*
+	 * add more here as they are defined in radiotap.h
+	 */
+};
+
+static const struct ieee80211_radiotap_namespace radiotap_ns = {
+	.n_bits = ARRAY_SIZE(rtap_namespace_sizes),
+	.align_size = rtap_namespace_sizes,
+};
+#endif
+
+
 void ws_sta_free_ref(struct ws_sta *ws_sta)
 {
 	if (atomic_dec_and_test(&ws_sta->refcount))
@@ -263,6 +302,11 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 
 	ret = ieee80211_radiotap_iterator_init(&iterator, rthdr, len, NULL);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
+	/* Overwrite the namespace with one that includes the VHT field. */
+	iterator.current_namespace = &radiotap_ns;
+#endif
+
 	while (!ret) {
 		ret = ieee80211_radiotap_iterator_next(&iterator);
 
@@ -303,6 +347,43 @@ int ws_sta_parse_radiotap(struct ws_sta *ws_sta,
 
 			if (flags & IEEE80211_RADIOTAP_MCS_SGI)
 				rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+			bitrate = cfg80211_calculate_bitrate(&rate);
+			/* might return 0 for MCS >= 32 */
+			if (bitrate)
+				ws_sta_detailed_apply(&ws_sta->rate, bitrate);
+			break;
+		}
+		case IEEE80211_RADIOTAP_VHT: {
+			u8 flags = *(iterator.this_arg + 2);
+			u8 bandwidth = *(iterator.this_arg + 3);
+			u8 mcs_nss = *(iterator.this_arg + 4);
+			struct rate_info rate;
+			int bitrate;
+
+			rate.flags = RATE_INFO_FLAGS_VHT_MCS;
+			if (flags & IEEE80211_RADIOTAP_VHT_FLAG_SGI)
+				rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+			if (bandwidth == 1)
+				rate.flags |= RATE_INFO_FLAGS_40_MHZ_WIDTH;
+			else if (bandwidth == 4)
+				rate.flags |= RATE_INFO_FLAGS_80_MHZ_WIDTH;
+			else if (bandwidth == 11)
+				rate.flags |= RATE_INFO_FLAGS_160_MHZ_WIDTH;
+#else
+			rate.bw = RATE_INFO_BW_20;
+			if (bandwidth == 1)
+				rate.bw = RATE_INFO_BW_40;
+			else if (bandwidth == 4)
+				rate.bw = RATE_INFO_BW_80;
+			else if (bandwidth == 11)
+				rate.bw = RATE_INFO_BW_160;
+#endif
+
+			rate.mcs = mcs_nss >> 4 & 0xf;
+			rate.nss = mcs_nss & 0xf;
 
 			bitrate = cfg80211_calculate_bitrate(&rate);
 			/* might return 0 for MCS >= 32 */
